@@ -38,11 +38,11 @@ class HistManager
     void FillTrackTof(StPicoDst* pico, StPicoTrack *track);
     void FillTrackCut(Int_t CutID); // 
     // PID 
-    void FillProton(StPicoDst *pico, StPicoTrack *PicoTrack, Double_t y_mid);  
+    /*void FillProton(StPicoDst *pico, StPicoTrack *PicoTrack, Double_t y_mid);  
     void FillKaon(StPicoDst *pico, StPicoTrack *PicoTrack, Double_t y_mid); 
     void FillPion(StPicoDst *pico, StPicoTrack *PicoTrack, Double_t y_mid); 
     void FillPIDMult(Int_t, Int_t, Int_t, Int_t, Int_t); 
-
+	*/
     // Scalor Product method
 
   private:

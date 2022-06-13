@@ -35,11 +35,11 @@
 #include "StMessMgr.h"
 #include <algorithm>
 #include <array>
-//#include "StRoot/StRefMultCorr/StRefMultCorr.h"
-//#include "StRoot/StRefMultCorr/CentralityMaker.h"
+#include "StRoot/StRefMultCorr/StRefMultCorr.h"
+#include "StRoot/StRefMultCorr/CentralityMaker.h"
 ClassImp(Shift)
 
-    //StRefMultCorr* Shift::mRefMultCorr = NULL;
+    StRefMultCorr* Shift::mRefMultCorr = NULL;
     //-----------------------------------------------------------------------------
     Shift::Shift(const char* name, StPicoDstMaker *picoMaker, char* jobid, std::string configFileName)
 : StMaker(name)
@@ -49,7 +49,7 @@ ClassImp(Shift)
     mPicoDst = 0;
     mEnergy = 3;
 
-    mOutPut_Shift=Form("%s_shift.root",jobid);
+    mOutPut_Rec=Form("%s_shift.root",jobid);
 }
 
 //----------------------------------------------------------------------------- 
@@ -59,14 +59,14 @@ Shift::~Shift()
 //----------------------------------------------------------------------------- 
 Int_t Shift::Init() 
 {
-    //if(!mRefMultCorr)
-    //{
-    //    mRefMultCorr = CentralityMaker::instance()->getRefMultCorr();
-    //}
+    if(!mRefMultCorr)
+    {
+        mRefMultCorr = CentralityMaker::instance()->getRefMultCorr();
+    }
     // qapid
     mCutManager = new CutManager(configs);
-    /*mHistManager = new HistManager();
-    mHistManager->InitQAPID();*/
+    //mHistManager = new HistManager();
+    //mHistManager->InitQAPID();
 
     // eventplane 
     // EPD
@@ -76,29 +76,66 @@ Int_t Shift::Init()
     //const int numSubEvents = 3;
     //char subEventModes[_numSubEvents] = {'r','e','e'};
 
-    mFile_Shift = new TFile(mOutPut_Shift.Data(),"RECREATE");
-    mFile_Shift->cd();
-    
-    TFile *mRecenteringInputFile = TFile::Open("/star/data01/pwg/dchen/Ana/3GeV_FXT_2018/evenplane/3gev_2018_recenterpar.root");
+    mFile_Rec = new TFile(mOutPut_Rec.Data(),"RECREATE");
+    mFile_Rec->cd();
+    //TFile *mRecenteringInputFile = TFile::Open("/star/u/dchen/ana/19gev_2019/eventplane/test_recenterpar.root"); // test
+    //TFile *mRecenteringInputFile = TFile::Open("/star/u/dchen/ana/19gev_2019/recenter/test_recenterpar.root"); // test
+    //TFile *mRecenteringInputFile = TFile::Open("/star/u/dchen/ana/19gev_2019/shift/test_recenterpar_shift.root"); // more test
+    TFile *mRecenteringInputFile = TFile::Open("/star/data01/pwg/dchen/Ana/19p6GeV/shift/19gev_recenterpar.root"); // pwg
     if (mRecenteringInputFile->IsZombie()) {
-    	std::cout << "Error opening file with Q vector recentering histograms" << std::endl;
+    	std::cout << "Error opening file with Q vector /ecentering histograms" << std::endl;
     	std::cout << "No recentering in this analysis." << std::endl;
         for (int sub = 0; sub < _numSubEvents; sub++) // event plane Psi histograms
         {
             getep_sub_recen[0][sub]     = 0;
-	    getep_sub_recen[1][sub]     = 0;
+            getep_sub_recen[1][sub]     = 0;
+            
+	    getep_sub_wt_recen[0][sub]     = 0;
+            getep_sub_wt_recen[1][sub]     = 0;
+
+	    getep_sub_tpc_recen[0][sub]     = 0;
+            getep_sub_tpc_recen[1][sub]     = 0;
         } // event plane Psi histograms
+        getep_full_recen[0]     = 0;
+        getep_full_recen[1]     = 0;
+       // sub w/ eta weight 
+	getep_full_wt_recen[0]     = 0;
+        getep_full_wt_recen[1]     = 0;
+       // tpc 
+	getep_full_tpc_recen[0]     = 0;
+        getep_full_tpc_recen[1]     = 0;
     }
     else{
       for (int sub = 0; sub < _numSubEvents; sub++) // event plane Psi histograms
       {
-          getep_sub_recen[0][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq1x_Sub_EP_%d",sub + 1));
-          getep_sub_recen[1][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq1y_Sub_EP_%d",sub + 1));
+          getep_sub_recen[0][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq1x_epd_ABCD_sub_%d",sub + 1));
+          getep_sub_recen[1][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq1y_epd_ABCD_sub_%d",sub + 1));
+
+       // sub w/ eta weight 
+          getep_sub_wt_recen[0][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq1x_epd_ABCD_wt_sub_%d",sub + 1));
+          getep_sub_wt_recen[1][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq1y_epd_ABCD_wt_sub_%d",sub + 1));
+
+       //  tpc  
+          getep_sub_tpc_recen[0][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq2x_tpc_AB_sub_%d",sub + 1));
+          getep_sub_tpc_recen[1][sub]     = (TProfile2D*)mRecenteringInputFile -> Get(Form("p_mq2y_tpc_AB_sub_%d",sub + 1));
       } // event plane Psi histograms
-      std::cout << "Recenterpar successfully implemented" << std::endl;
+      getep_full_recen[0]     = (TProfile2D*)mRecenteringInputFile -> Get("p_mq1x_epd_ABCD_full");
+      getep_full_recen[1]     = (TProfile2D*)mRecenteringInputFile -> Get("p_mq1y_epd_ABCD_full");
+      
+       // sub w/ eta weight 
+      getep_full_wt_recen[0]     = (TProfile2D*)mRecenteringInputFile -> Get("p_mq1x_epd_ABCD_wt_full");
+      getep_full_wt_recen[1]     = (TProfile2D*)mRecenteringInputFile -> Get("p_mq1y_epd_ABCD_wt_full");
+
+       // tpc 
+      getep_full_tpc_recen[0]     = (TProfile2D*)mRecenteringInputFile -> Get("p_mq2x_tpc_AB_full");
+      getep_full_tpc_recen[1]     = (TProfile2D*)mRecenteringInputFile -> Get("p_mq2y_tpc_AB_full");
+    cout << "Recenterpar successfully implemented" << endl;
     }
-    
-    TFile *mShiftInputFile = TFile::Open("/star/u/dchen/ana/3gev_2018/recenter/test_recenter.root");
+    //cout << (float)getep_full_recen[0]->GetBinContent(1, 1) << endl;
+    //TFile *mShiftInputFile = TFile::Open("/star/data01/pwg/dchen/Ana/3GeV_FXT_2018/recenter/3gev_recenter.root");
+    //TFile *mShiftInputFile = TFile::Open("/star/data01/pwg/dchen/Ana/19p6GeV/recenter/19gev_recenter.root"); // pwg
+    TFile *mShiftInputFile = TFile::Open("/star/data01/pwg/dchen/Ana/19p6GeV/shift/19gev_shiftpar.root"); // pwg
+    //TFile *mShiftInputFile = TFile::Open("/star/u/dchen/ana/19gev_2019/shift/test_shiftpar_shift.root"); // more test
     if (mShiftInputFile->IsZombie()) {
     	std::cout << "Error opening file with shift correction histograms" << std::endl;
     	std::cout << "No shifting in this analysis." << std::endl;
@@ -106,16 +143,37 @@ Int_t Shift::Init()
 	{
           p_sub_ep_shiftpar_sin[sub] = 0;
           p_sub_ep_shiftpar_cos[sub] = 0;
+          p_sub_ep_wt_shiftpar_sin[sub] = 0;
+          p_sub_ep_wt_shiftpar_cos[sub] = 0;
+          p_sub_ep_tpc_shiftpar_sin[sub] = 0;
+          p_sub_ep_tpc_shiftpar_cos[sub] = 0;
 	}
+        p_full_ep_shiftpar_sin = 0;
+        p_full_ep_shiftpar_cos = 0;
+        p_full_ep_wt_shiftpar_sin = 0;
+        p_full_ep_wt_shiftpar_cos = 0;
+        p_full_ep_tpc_shiftpar_sin = 0;
+        p_full_ep_tpc_shiftpar_cos = 0;
     }
     else{
       for (int sub = 0; sub < _numSubEvents; sub++) // event plane Psi histograms
       {
-        p_sub_ep_shiftpar_sin[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_Sub_%d_sin", sub + 1));
-        p_sub_ep_shiftpar_cos[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_Sub_%d_cos", sub + 1));
+        p_sub_ep_shiftpar_sin[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_sub_%d_sin", sub + 1));
+        p_sub_ep_shiftpar_cos[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_sub_%d_cos", sub + 1));
+        p_sub_ep_wt_shiftpar_sin[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_wt_sub_%d_sin", sub + 1));
+        p_sub_ep_wt_shiftpar_cos[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_wt_sub_%d_cos", sub + 1));
+        p_sub_ep_tpc_shiftpar_sin[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_tpc_AB_sub_%d_sin", sub + 1));
+        p_sub_ep_tpc_shiftpar_cos[sub]     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_tpc_AB_sub_%d_cos", sub + 1));
       }
+      p_full_ep_shiftpar_sin     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_full_sin"));
+      p_full_ep_shiftpar_cos     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_full_cos"));
+      p_full_ep_wt_shiftpar_sin     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_wt_full_sin"));
+      p_full_ep_wt_shiftpar_cos     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_epd_ABCD_wt_full_cos"));
+      p_full_ep_tpc_shiftpar_sin     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_tpc_AB_full_sin"));
+      p_full_ep_tpc_shiftpar_cos     = (TProfile3D*)mShiftInputFile -> Get(Form("EPshiftpar_tpc_AB_full_cos"));
       std::cout << "Shiftpar successfully implemented" << std::endl;
     }
+
     return 0;
 
 }
@@ -125,12 +183,12 @@ Int_t Shift::Finish()
 {
 
 
-    if(mOutPut_Shift != "")
+    if(mOutPut_Rec != "")
     {
-        mFile_Shift->cd();
+        mFile_Rec->cd();
         //mHistManager->WriteQAPID();
         mEpProManager->WriteEP();
-        mFile_Shift->Close();
+        mFile_Rec->Close();
     }
     return kStOK;
 }
@@ -176,50 +234,60 @@ Int_t Shift::Make()
     // RefMult
     Int_t runId = mPicoEvent->runId();
 
-    //cout << "runID = " << runId << endl;
-    /*Int_t refMult = mPicoEvent->refMult();
+    Int_t refMult = mPicoEvent->refMult();
     Float_t vz = mPicoEvent->primaryVertex().Z();
-    Float_t vx = mPicoEvent->primaryVertex().X();
-    Float_t vy = mPicoEvent->primaryVertex().Y();
+    //Float_t vx = mPicoEvent->primaryVertex().X();
+    //Float_t vy = mPicoEvent->primaryVertex().Y();
 
-    Float_t vzvpd = mPicoEvent->vzVpd();
-    Int_t TOF_Mul = mPicoEvent->btofTrayMultiplicity();
-    Int_t nMatchedToF = mPicoEvent->nBTOFMatch();
-    Float_t zdcX = mPicoEvent->ZDCx();*/
+    //Float_t vzvpd = mPicoEvent->vzVpd();
+    //Int_t TOF_Mul = mPicoEvent->btofTrayMultiplicity();
+    //Int_t nMatchedToF = mPicoEvent->nBTOFMatch();
+    Float_t zdcX = mPicoEvent->ZDCx();
     
-    /*mHistManager->FillEventQA(mPicoEvent->primaryVertex(),refMult,TOF_Mul,TrkMult);
-    mHistManager->FillEventCut(0);*/
+    //mHistManager->FillEventQA(mPicoEvent->primaryVertex(),refMult,TOF_Mul,TrkMult);
+    //mHistManager->FillEventCut(0);
 
     // runIndex
     const int runIndex = GetRunIndex(runId);
     // event plane IClasses
     //Start with clean events
     IEvent * theEvent = new IEvent;   
+    IEvent * theEvent_wt = new IEvent;   
+    IEvent * theEvent_tpc = new IEvent;   
     IEvent subEvents[_numSubEvents];
+    IEvent subEvents_wt[_numSubEvents];
+    IEvent subEvents_tpc[_numSubEvents];
     theEvent->ClearEvent();
+    theEvent_wt->ClearEvent();
+    theEvent_tpc->ClearEvent();
     for (int i = 0; i < _numSubEvents; i++)
     {
     	subEvents[i].ClearEvent();
+    	subEvents_wt[i].ClearEvent();
+    	subEvents_tpc[i].ClearEvent();
     }	
 
     // Event Cut
     if(mCutManager->passEventCut(mPicoDst)) // event cut
     {
 	
-        /*mHistManager->FillEventQaCut(mPicoEvent->primaryVertex(),refMult,TOF_Mul,TrkMult);
-        mHistManager->FillEventCut(1);*/
-        //mRefMultCorr->init(runId);
-        //mRefMultCorr->initEvent(refMult, vz, zdcX);
-        //const Int_t cent9 = mRefMultCorr->getCentralityBin9();
+        //mHistManager->FillEventQaCut(mPicoEvent->primaryVertex(),refMult,TOF_Mul,TrkMult);
+        //mHistManager->FillEventCut(1);
+        mRefMultCorr->init(runId);
+        mRefMultCorr->initEvent(refMult, vz, zdcX);
+        //const Int_t cent16 = mRefMultCorr->getCentralityBin16();
+        const Int_t cent9 = mRefMultCorr->getCentralityBin9();
         //const Double_t reweight = mRefMultCorr->getWeight();
 	//std::cout << "refMult: " << refMult << std::endl;
 	//std::cout << "TrkMult: " << TrkMult << std::endl;
-        const int cent16 = mCutManager->getCentrality(TrkMult);
+        //const int cent16 = mCutManager->getCentrality(TrkMult);
 	
 	//std::cout << "cent16: " << cent16 << std::endl;
+	//std::cout << "cent9: " << cent9 << std::endl;
         //const double reweight = 1.0;
-        if(cent16 >  15 || cent16 < 0) return 0;
-        //mHistManager->FillEventCent(cent16);
+        //if(cent16 >  15 || cent16 < 0) return 0;
+        if(cent9 > 8  || cent9 < 0) return 0;
+        //mHistManager->FillEventCent(cent9);
         //mHistManager->FillEventCut(2);
 	
 	/// qapid
@@ -242,13 +310,14 @@ Int_t Shift::Make()
             if(!mCutManager->passTrackBasic(track)) continue;
             //mHistManager->FillTrackCut(1);
             //mHistManager->FillTrackPhysics(track );
+    	    //std::cout << "pass track basic cut" << std::endl;
 		
             //StPicoPhysicalHelix helix = track->helix(mField);
             //Float_t dca = helix.geometricSignedDistance(mVertexPos);
             //Short_t  s_charge = track->charge();
             Float_t dca=track->gDCA(mVertexPos).Mag();
-	    /*if(mCutManager->isTofTrack(mPicoDst,track)) mHistManager->FillTrackTof(mPicoDst,track);
-	    if(mCutManager->isProton(track))
+	    //if(mCutManager->isTofTrack(mPicoDst,track)) mHistManager->FillTrackTof(mPicoDst,track);
+	    /*if(mCutManager->isProton(track))
 	    {
 	   	mHistManager->FillProton(mPicoDst,track,configs.y_mid); 
 		N_pr++;
@@ -264,7 +333,8 @@ Int_t Shift::Make()
 	   	mHistManager->FillPion(mPicoDst,track,configs.y_mid); 
 		if(s_charge >0) N_pp++;
 		else N_pm++;
-	    }*/
+	    }
+	    */
 	    //TPC EP
             if(!mCutManager->passTrackEP(track,dca)) continue;
 	    Double_t eta = track->pMom().Eta();
@@ -272,7 +342,7 @@ Int_t Shift::Make()
 	    Double_t pt = track->pMom().Perp();
 	    IEventPlane eventPlane(phi, pt);
 	    eventPlane.SetEta(eta);
-	    theEvent->AddEPParticle(eventPlane);
+	    theEvent_tpc->AddEPParticle(eventPlane);
             /*if(eta > -2.0 && eta < -1.1)    // sub event A eta(-2,-1.25)   // mid-rapidity is 1.06  -2.0-1.4, -1.05-0.65
             {
 	   	mEpProManager->FillTpcAQvec(cent16,runIndex, track); 
@@ -297,22 +367,26 @@ Int_t Shift::Make()
         double mip;
         double TileWeight           = {0};
 
-        /*double Qx_EPD[7]={0};
-        double Qy_EPD[7]={0};
-        double weight_EPD[7]={0};*/
-        for(Int_t iHit=0; iHit<nepdHits; iHit++)
-	{ // EPD loop
+        //double Qx_EPD[7]={0};
+        //double Qy_EPD[7]={0};
+        //double weight_EPD[7]={0};
+        for(Int_t iHit=0; iHit<nepdHits; iHit++){ // EPD loop
             epdHit = mPicoDst->epdHit(iHit);
             mip = epdHit->nMIP();
             int iring = epdHit->row() -1;//(1~16)-1 -> 0-15
 
             if( !epdHit) continue;
+            if( !epdHit->isGood())
+	    { 
+            	std::cout << "note good epd hit "  << std::endl;
+		    continue;
+	    }
             int position = epdHit->position();
             int ringgroup = mEpdEpInfo->RingGroup(iring);   //0: 0-7, 1: 8-15    0-> inner mose
             //std::cout << "ringgroup = " << ringgroup << std::endl;
             if(ringgroup == -1) continue;
             //std::cout << "epdHit id = " << epdHit->id() << std::endl;
-            if(epdHit->id() > 0 ) continue; // only East side for FXT 
+            //if(epdHit->id() > 0 ) continue; // only East side for FXT 
 
             StraightLine_center = mEpdGeom->TileCenter(epdHit->id())        - mPicoEvent->primaryVertex();  // the collision is from midille to side of the TPC
             StraightLine_random = mEpdGeom->RandomPointOnTile(epdHit->id()) - mPicoEvent->primaryVertex();
@@ -328,12 +402,18 @@ Int_t Shift::Make()
             TileWeight = (mip > configs.epd_max_weight) ? configs.epd_max_weight : mip;
             //std::cout << "tileweight  = " << TileWeight << std::endl;
 
-	    mEpProManager->FillEpdQa(iring, phi_epd_center, eta_epd_center, phi_epd_random, eta_epd_random);
 	    mEpProManager->FillEpdMip(eta_epd_center,position,TileWeight);
+	    Double_t eta_wt = mEpProManager->GetEtaWeight(cent9,eta_epd_center);
+	    //std::cout<< "centrality : "<< cent9 << "eta: " << eta_epd_center << "eta weight: " << eta_wt << std::endl;
 
 	    IEventPlane eventPlane(phi_epd_center, TileWeight);
-	    eventPlane.SetTileID(epdHit->id());
+	    IEventPlane eventPlane_wt(phi_epd_center, TileWeight*eta_wt);
+	    //eventPlane.SetTileID(epdHit->id());
+	    //std::cout << eta_epd_center << std::endl;
+	    eventPlane.SetEta(eta_epd_center);
+	    eventPlane_wt.SetEta(eta_epd_center);
 	    theEvent->AddEPParticle(eventPlane);
+	    theEvent_wt->AddEPParticle(eventPlane_wt);
             /*for(int i=0; i<4; i++){
                 if(i == ringgroup){
                     Qx_EPD[i] += TileWeight * cos(1.0*phi_epd_center);
@@ -375,36 +455,72 @@ Int_t Shift::Make()
 	{
 	  //subEvents[sub] = theEvent->GetSubEvent(subEventModes[sub], subEventParams[sub][0] - COMrapidity, subEventParams[sub][1] - COMrapidity);
 	  subEvents[sub] = theEvent->GetSubEvent(_subEventModes[sub], _subEventParams[sub][0], _subEventParams[sub][1]);
+	  subEvents_wt[sub] = theEvent_wt->GetSubEvent(_subEventModes[sub], _subEventParams[sub][0], _subEventParams[sub][1]);
+	  subEvents_tpc[sub] = theEvent_tpc->GetSubEvent(_subEventModes[sub], _subEventParams_tpc[sub][0], _subEventParams_tpc[sub][1]);
 	}
+	//std::cout << "Size of wt TPC-East sub EP = " << subEvents_tpc[0].GetEPParticles().size() << std::endl;
+	//std::cout << "Size of wt TPC-West sub EP = " << subEvents_tpc[1].GetEPParticles().size() << std::endl;
 	//std::cout << "Size of  EPD-C sub EP = " << subEvents[0].GetEPParticles().size() << std::endl;
 	//std::cout << "Size of  TPC-A sub EP = " << subEvents[1].GetEPParticles().size() << std::endl;
 	//std::cout << "Size of  TPC-B sub EP = " << subEvents[2].GetEPParticles().size() << std::endl << std::endl;
 	if (subEvents[0].GetEPParticles().size() < 2
-	|| subEvents[1].GetEPParticles().size() < 2
-	|| subEvents[2].GetEPParticles().size() < 2)
+	//|| subEvents[1].GetEPParticles().size() < 2
+	|| subEvents[1].GetEPParticles().size() < 2)
 		{return 0;}	
 	
 	float subQx[_numSubEvents];
 	float subQy[_numSubEvents];
+	float subQx_wt[_numSubEvents];
+	float subQy_wt[_numSubEvents];
+	float subQx_tpc[_numSubEvents];
+	float subQy_tpc[_numSubEvents];
+	mEpProManager->FillPsiRawSubs(subEvents[0].GetEventPsi(1),subEvents[1].GetEventPsi(1));
+	mEpProManager->FillPsiRawSubs_wt(subEvents_wt[0].GetEventPsi(1),subEvents_wt[1].GetEventPsi(1));
+	mEpProManager->FillPsiRawSubs_tpc(subEvents_tpc[0].GetEventPsi(2),subEvents_tpc[1].GetEventPsi(2));
+	
+	mEpProManager->FillPsiRawFull(theEvent->GetEventPsi(1));
+	mEpProManager->FillPsiRawFull_wt(theEvent_wt->GetEventPsi(1));
+	mEpProManager->FillPsiRawFull_tpc(theEvent_tpc->GetEventPsi(2));
+	
+	
+	mEpProManager->FillSubEpQvec_full(cent9, runIndex, theEvent->GetQx(1), theEvent->GetQy(1));
+	mEpProManager->FillSubEpQvec_wt_full(cent9, runIndex, theEvent_wt->GetQx(1), theEvent_wt->GetQy(1));
+	mEpProManager->FillSubEpQvec_tpc_full(cent9, runIndex, theEvent_tpc->GetQx(2), theEvent_tpc->GetQy(2));
 	for (int sub = 0; sub < _numSubEvents; sub++) // raw event plane, store recenter parameter
 	{
-	  //std::cout<< subEvents[sub].GetEventPsi(1) << std::endl;
 	  mEpProManager->FillPsiRaw(sub, subEvents[sub].GetEventPsi(1));
+	  mEpProManager->FillPsiRaw_wt(sub, subEvents_wt[sub].GetEventPsi(1));
+	  mEpProManager->FillPsiRaw_tpc(sub, subEvents_tpc[sub].GetEventPsi(2));
      	  subQx[sub] = subEvents[sub].GetQx(1);
      	  subQy[sub] = subEvents[sub].GetQy(1);
-	  mEpProManager->FillSubEpQvec(sub, cent16, runIndex, subQx[sub], subQy[sub]);
-	
+     	  subQx_wt[sub] = subEvents_wt[sub].GetQx(1);
+     	  subQy_wt[sub] = subEvents_wt[sub].GetQy(1);
+     	  subQx_tpc[sub] = subEvents_tpc[sub].GetQx(2);
+     	  subQy_tpc[sub] = subEvents_tpc[sub].GetQy(2);
+	  mEpProManager->FillSubEpQvec(sub, cent9, runIndex, subQx[sub], subQy[sub]);
+	  mEpProManager->FillSubEpQvec_wt(sub, cent9, runIndex, subQx_wt[sub], subQy_wt[sub]);
+	  mEpProManager->FillSubEpQvec_tpc(sub, cent9, runIndex, subQx_tpc[sub], subQy_tpc[sub]);
 	} // raw event plane, store recenter parameter
 	
+	// EPD ABCD
 	for (int i = 0; i < _numSubEvents; i++)
 	{
-	  if (getep_sub_recen[0][i] != 0 && getep_sub_recen[1][i] != 0) // recenter event plane, store shift parameter
+	  if (getep_sub_recen[0][i] != 0 && getep_sub_recen[1][i] != 0) // sub recenter event plane, store shift parameter
 	     {
-	       float subEventQx = (float)getep_sub_recen[0][i]->GetBinContent(cent16+1, runIndex+1);
-	       float subEventQy = (float)getep_sub_recen[1][i]->GetBinContent(cent16+1, runIndex+1);
+	       float subEventQx = (float)getep_sub_recen[0][i]->GetBinContent(cent9+1, runIndex+1);
+	       float subEventQy = (float)getep_sub_recen[1][i]->GetBinContent(cent9+1, runIndex+1);
 	       subEvents[i].SetQCenter(subEventQx, subEventQy);
+    	        //std::cout << subEventQx  << " subEventQx " << std::endl;
+    	        //std::cout << subEventQy  << " subEventQy " << std::endl;
 	     }
-	} // recenter event plane, store shift parameter
+	} // sub recenter event plane, store shift parameter
+	if (getep_full_recen[0] != 0 && getep_full_recen[1] != 0) // full recenter event plane, store shift parameter
+        {
+	       float fullEventQx = (float)getep_full_recen[0]->GetBinContent(cent9+1, runIndex+1);
+	       float fullEventQy = (float)getep_full_recen[1]->GetBinContent(cent9+1, runIndex+1);
+	       theEvent->SetQCenter(fullEventQx, fullEventQy);
+        } // full recenter event plane, store shift parameter
+
 
 	float subQxRec[_numSubEvents];
 	float subQyRec[_numSubEvents];
@@ -417,16 +533,16 @@ Int_t Shift::Make()
      	  	subQyRec[i] = subEvents[i].GetQy(1);
 		// implement shift correction
 		float f_Psi_shifted = subEvents[i].GetEventPsi(1);
-	        mEpProManager->FillSubEpQvecRec(i, cent16, runIndex, subQxRec[i], subQyRec[i]);
+	        mEpProManager->FillSubEpQvecRec(i, cent9, runIndex, subQxRec[i], subQyRec[i]);
                 for(int iorder=0; iorder<20; iorder++)
                 {
-                    // output first order shift parameter
-	            mEpProManager->FillSubEpShiftpar(i, iorder, cent16, runIndex, subEvents[i].GetEventPsi(1));
+                    // first order shift parameter
+	            mEpProManager->FillSubEpShiftpar(i, iorder, cent9, runIndex, subEvents[i].GetEventPsi(1));
                     // input first order shift parameter
 		    // implement shift correction
 	       	    float tmp = (float)(configs.order_m*(iorder+1));
-	       	    float sinAve = p_sub_ep_shiftpar_sin[i]->GetBinContent(cent16+1, iorder+1, runIndex+1);
-	       	    float cosAve = p_sub_ep_shiftpar_cos[i]->GetBinContent(cent16+1, iorder+1, runIndex+1);
+	       	    float sinAve = p_sub_ep_shiftpar_sin[i]->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       	    float cosAve = p_sub_ep_shiftpar_cos[i]->GetBinContent(cent9+1, iorder+1, runIndex+1);
 	       	    f_Psi_shifted +=
 	       	    2.0*(cosAve*TMath::Sin(tmp* subEvents[i].GetEventPsi(1)) - sinAve*TMath::Cos(tmp* subEvents[i].GetEventPsi(1)))/tmp;
                 }
@@ -437,10 +553,196 @@ Int_t Shift::Make()
 	        mEpProManager->FillPsiShift(i, f_Psi_shifted);
 		psiShift[i] = f_Psi_shifted;
 	} // recenter event plane, store shift parameter
+	mEpProManager->FillPsiRecSubs(subEvents[0].GetEventPsi(1),subEvents[1].GetEventPsi(1));
+	mEpProManager->FillPsiShiftSubs(psiShift[0], psiShift[1]);
 	// Fill resolution plots
-	mEpProManager->FillPsiResolution(cent16, psiShift[0], psiShift[1], psiShift[2]);
+	mEpProManager->FillPsi1ResolutionEpd(cent9, psiShift[0], psiShift[1]);
+	
+	// full event plane	
+        if(theEvent->GetEventPsi(1) != -99)
+	{ // recenter the full event plane, shift parameter
+	   mEpProManager->FillPsiRecFull(theEvent->GetEventPsi(1));
+	   float f_Psi_shifted = theEvent->GetEventPsi(1);
+           for(int iorder=0; iorder<20; iorder++)
+           {
+               // first order shift parameter
+	       mEpProManager->FillFullEpShiftpar(iorder, cent9, runIndex, theEvent->GetEventPsi(1));
+               // input first order shift parameter
+	       // implement shift correction
+	       float tmp = (float)(configs.order_m*(iorder+1));
+	       float sinAve = p_full_ep_shiftpar_sin->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       float cosAve = p_full_ep_shiftpar_cos->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       f_Psi_shifted +=
+	       2.0*(cosAve*TMath::Sin(tmp* theEvent->GetEventPsi(1)) - sinAve*TMath::Cos(tmp* theEvent->GetEventPsi(1)))/tmp;
+           }
+	   double AngleWrapAround = 2.0*TMath::Pi()/(double)configs.order_m;
+	   double HalfWrapAround = AngleWrapAround/2;
+	   while (f_Psi_shifted < -1*HalfWrapAround) f_Psi_shifted += AngleWrapAround;
+	   while (f_Psi_shifted > HalfWrapAround) f_Psi_shifted -= AngleWrapAround;
+	   mEpProManager->FillPsiShiftFull( f_Psi_shifted);
+        } // recenter the full event plane, shift parameter
+
+	// EPD ABCD w/ wt
+	for (int i = 0; i < _numSubEvents; i++)
+	{
+	  if (getep_sub_wt_recen[0][i] != 0 && getep_sub_wt_recen[1][i] != 0) // sub_wt recenter event plane, store shift parameter
+	     {
+	       float subEventQx = (float)getep_sub_wt_recen[0][i]->GetBinContent(cent9+1, runIndex+1);
+	       float subEventQy = (float)getep_sub_wt_recen[1][i]->GetBinContent(cent9+1, runIndex+1);
+	       subEvents_wt[i].SetQCenter(subEventQx, subEventQy);
+	     }
+	} // sub recenter event plane, store shift parameter
+	if (getep_full_wt_recen[0] != 0 && getep_full_wt_recen[1] != 0) // full recenter event plane, store shift parameter
+        {
+	       float fullEventQx = (float)getep_full_wt_recen[0]->GetBinContent(cent9+1, runIndex+1);
+	       float fullEventQy = (float)getep_full_wt_recen[1]->GetBinContent(cent9+1, runIndex+1);
+	       theEvent_wt->SetQCenter(fullEventQx, fullEventQy);
+        } // full recenter event plane, store shift parameter
+
+	//float subQxRec_wt[_numSubEvents];
+	//float subQyRec_wt[_numSubEvents];
+	float psiShift_wt[_numSubEvents];
+	for (int i = 0; i < _numSubEvents; i++)
+	{ // recenter event plane, store shift parameter
+
+        	if(subEvents_wt[i].GetEventPsi(1) == -99){continue;} //Empty subevent
+	        mEpProManager->FillPsiRec_wt(i, subEvents_wt[i].GetEventPsi(1));
+     	  	//subQxRec_wt[i] = subEvents_wt[i].GetQx(1);
+     	  	//subQyRec_wt[i] = subEvents_wt[i].GetQy(1);
+		// implement shift correction
+		float f_Psi_shifted = subEvents_wt[i].GetEventPsi(1);
+                for(int iorder=0; iorder<20; iorder++)
+                {
+                    // first order shift parameter
+	            mEpProManager->FillSubEpShiftpar_wt(i, iorder, cent9, runIndex, subEvents_wt[i].GetEventPsi(1));
+                    // input first order shift parameter
+		    // implement shift correction
+	       	    float tmp = (float)(configs.order_m*(iorder+1));
+	       	    float sinAve = p_sub_ep_wt_shiftpar_sin[i]->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       	    float cosAve = p_sub_ep_wt_shiftpar_cos[i]->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       	    f_Psi_shifted +=
+	       	    2.0*(cosAve*TMath::Sin(tmp* subEvents_wt[i].GetEventPsi(1)) - sinAve*TMath::Cos(tmp* subEvents_wt[i].GetEventPsi(1)))/tmp;
+                }
+		double AngleWrapAround = 2.0*TMath::Pi()/(double)configs.order_m;
+		double HalfWrapAround = AngleWrapAround/2;
+		while (f_Psi_shifted < -1*HalfWrapAround) f_Psi_shifted += AngleWrapAround;
+		while (f_Psi_shifted > HalfWrapAround) f_Psi_shifted -= AngleWrapAround;
+	        mEpProManager->FillPsiShift_wt(i, f_Psi_shifted);
+		psiShift_wt[i] = f_Psi_shifted;
+	} // recenter event plane, store shift parameter
+	mEpProManager->FillPsiRecSubs_wt(subEvents_wt[0].GetEventPsi(1),subEvents_wt[1].GetEventPsi(1));
+	mEpProManager->FillPsiShiftSubs_wt(psiShift_wt[0], psiShift_wt[1]);
+	// Fill resolution plots
+	mEpProManager->FillPsi1ResolutionEpdWt(cent9, psiShift_wt[0], psiShift_wt[1]);
+	
+	// full event plane	
+        if(theEvent_wt->GetEventPsi(1) != -99)
+	{ // recenter the full event plane, shift parameter
+	   mEpProManager->FillPsiRecFull_wt(theEvent_wt->GetEventPsi(1));
+	   float f_Psi_shifted = theEvent_wt->GetEventPsi(1);
+           for(int iorder=0; iorder<20; iorder++)
+           {
+               // first order shift parameter
+	       mEpProManager->FillFullEpShiftpar_wt(iorder, cent9, runIndex, theEvent_wt->GetEventPsi(1));
+               // input first order shift parameter
+	       // implement shift correction
+	       float tmp = (float)(configs.order_m*(iorder+1));
+	       float sinAve = p_full_ep_wt_shiftpar_sin->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       float cosAve = p_full_ep_wt_shiftpar_cos->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       f_Psi_shifted +=
+	       2.0*(cosAve*TMath::Sin(tmp* theEvent_wt->GetEventPsi(1)) - sinAve*TMath::Cos(tmp* theEvent_wt->GetEventPsi(1)))/tmp;
+	   }
+	   double AngleWrapAround = 2.0*TMath::Pi()/(double)configs.order_m;
+	   double HalfWrapAround = AngleWrapAround/2;
+	   while (f_Psi_shifted < -1*HalfWrapAround) f_Psi_shifted += AngleWrapAround;
+	   while (f_Psi_shifted > HalfWrapAround) f_Psi_shifted -= AngleWrapAround;
+	   mEpProManager->FillPsiShiftFull_wt( f_Psi_shifted);
+        } // recenter the full event plane, shift parameter
+
+        // TPC AB recenter
+	for (int i = 0; i < _numSubEvents; i++)
+	{
+	  if (getep_sub_tpc_recen[0][i] != 0 && getep_sub_tpc_recen[1][i] != 0) // sub_tpc recenter event plane, store shift parameter
+	     {
+	       float subEventQx = (float)getep_sub_tpc_recen[0][i]->GetBinContent(cent9+1, runIndex+1);
+	       float subEventQy = (float)getep_sub_tpc_recen[1][i]->GetBinContent(cent9+1, runIndex+1);
+		//cout << i <<  " " << subEventQx << " Qx "<< subEventQy << " Qy " << "cent "<< cent9  << "runIndex: "<< runIndex << "bin content: "<<  endl;
+	       subEvents_tpc[i].SetQCenter(subEventQx, subEventQy);
+	     }
+	} // sub recenter event plane, store shift parameter
+	if (getep_full_tpc_recen[0] != 0 && getep_full_tpc_recen[1] != 0) // full recenter event plane, store shift parameter
+        {
+	       float fullEventQx = (float)getep_full_tpc_recen[0]->GetBinContent(cent9+1, runIndex+1);
+	       float fullEventQy = (float)getep_full_tpc_recen[1]->GetBinContent(cent9+1, runIndex+1);
+	       theEvent_tpc->SetQCenter(fullEventQx, fullEventQy);
+        } // full recenter event plane, store shift parameter
+
+	//float subQxRec_tpc[_numSubEvents];
+	//float subQyRec_tpc[_numSubEvents];
+	float psiShift_tpc[_numSubEvents];
+	for (int i = 0; i < _numSubEvents; i++)
+	{ // recenter event plane, store shift parameter
+        	if(subEvents_tpc[i].GetEventPsi(2) == -99){continue;} //Empty subevent
+		//cout << i << subEvents_tpc[i].GetEventPsi(2) << " psi2 tpc sub" << endl;
+	        mEpProManager->FillPsiRec_tpc(i, subEvents_tpc[i].GetEventPsi(2));
+     	  	//subQxRec_tpc[i] = subEvents_tpc[i].GetQx(2);
+     	  	//subQyRec_tpc[i] = subEvents_tpc[i].GetQy(2);
+		// implement shift correction
+		float f_Psi_shifted = subEvents_tpc[i].GetEventPsi(2);
+                for(int iorder=0; iorder<20; iorder++)
+                {
+                    // first order shift parameter
+	            mEpProManager->FillSubEpShiftpar_tpc(i, iorder, cent9, runIndex, subEvents_tpc[i].GetEventPsi(2));
+                    // input first order shift parameter
+		    // implement shift correction
+	       	    float tmp = (float)(configs.order_n*(iorder+1));
+	       	    float sinAve = p_sub_ep_tpc_shiftpar_sin[i]->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       	    float cosAve = p_sub_ep_tpc_shiftpar_cos[i]->GetBinContent(cent9+1, iorder+1, runIndex+1);
+		//cout << i <<  " " << p_sub_ep_tpc_shiftpar_cos[i] << " p_cos[i] " << "cent "<< cent9 << "iorder: "<< iorder << "runIndex: "<< runIndex << "bin content: "<<p_sub_ep_tpc_shiftpar_cos[i]->GetBinContent(cent9+1, iorder+1, runIndex+1)<<  endl;
+	       	    f_Psi_shifted +=
+	       	    2.0*(cosAve*TMath::Sin(tmp* subEvents_tpc[i].GetEventPsi(2)) - sinAve*TMath::Cos(tmp* subEvents_tpc[i].GetEventPsi(2)))/tmp;
+                }
+		double AngleWrapAround = 2.0*TMath::Pi()/(double)configs.order_n;
+		double HalfWrapAround = AngleWrapAround/2;
+		while (f_Psi_shifted < -1*HalfWrapAround) f_Psi_shifted += AngleWrapAround;
+		while (f_Psi_shifted > HalfWrapAround) f_Psi_shifted -= AngleWrapAround;
+	        mEpProManager->FillPsiShift_tpc(i, f_Psi_shifted);
+		psiShift_tpc[i] = f_Psi_shifted;
+		//cout << i <<  " " << f_Psi_shifted << " psi2 tpc sub" << endl;
+	} // recenter event plane, store shift parameter
+	mEpProManager->FillPsiRecSubs_tpc(subEvents_tpc[0].GetEventPsi(2),subEvents_tpc[1].GetEventPsi(2));
+	mEpProManager->FillPsiShiftSubs_tpc(psiShift_tpc[0], psiShift_tpc[1]);
+	// Fill resolution plots
+	mEpProManager->FillPsi2ResolutionTpc(cent9, psiShift_tpc[0], psiShift_tpc[1]);
+	//cout << "tpc east = " << psiShift_tpc[0] << " tpc west = "<<psiShift_tpc[1] << endl;
+
+	// full event plane	
+        if(theEvent_tpc->GetEventPsi(2) != -99)
+	{ // recenter the full event plane, shift parameter
+	   mEpProManager->FillPsiRecFull_tpc(theEvent_tpc->GetEventPsi(2));
+	   float f_Psi_shifted = theEvent_tpc->GetEventPsi(2);
+           for(int iorder=0; iorder<20; iorder++)
+           {
+               // second order shift parameter
+	       mEpProManager->FillFullEpShiftpar_tpc(iorder, cent9, runIndex, theEvent_tpc->GetEventPsi(2));
+	       // implement shift correction
+	       float tmp = (float)(configs.order_n*(iorder+1));
+	       float sinAve = p_full_ep_tpc_shiftpar_sin->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       float cosAve = p_full_ep_tpc_shiftpar_cos->GetBinContent(cent9+1, iorder+1, runIndex+1);
+	       f_Psi_shifted +=
+	       2.0*(cosAve*TMath::Sin(tmp* theEvent->GetEventPsi(2)) - sinAve*TMath::Cos(tmp* theEvent->GetEventPsi(2)))/tmp;
+	   }
+	   double AngleWrapAround = 2.0*TMath::Pi()/(double)configs.order_n;
+	   double HalfWrapAround = AngleWrapAround/2;
+	   while (f_Psi_shifted < -1*HalfWrapAround) f_Psi_shifted += AngleWrapAround;
+	   while (f_Psi_shifted > HalfWrapAround) f_Psi_shifted -= AngleWrapAround;
+	   mEpProManager->FillPsiShiftFull_tpc( f_Psi_shifted);
+        } // recenter the full event plane, shift parameter
+
+
 
     } // event cut
+
     return kStOK;
 }
 

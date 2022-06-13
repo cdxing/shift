@@ -20,10 +20,10 @@ void analyzePico(const Char_t *inputFile="test.list", char *outputFile="test",st
 	loadSharedLibraries();
 	//cout<<"test 0 "<<endl;
 
-        //gSystem->Load("StRefMultCorr");
 	//gSystem->ResetSignals();
 	gSystem->Load("ConstManager");
   	gSystem->Load("ConfigReader");
+        gSystem->Load("StRefMultCorr");
 	gSystem->Load("StPicoEvent");
 	gSystem->Load("StPicoDstMaker");
         gSystem->Load("StEpdUtil");
@@ -36,7 +36,7 @@ void analyzePico(const Char_t *inputFile="test.list", char *outputFile="test",st
 	//cout<<"test 1 "<<endl;
 
 	StPicoDstMaker *picoMaker = new StPicoDstMaker(2,inputFile,"picoDst");
-	Shift *shift = new Shift("recenter",picoMaker,outputFile,configFileName);
+	Shift *shift = new Shift("shift",picoMaker,outputFile,configFileName);
 
 	chain->Init();
 	//cout<<"test 2 "<<endl;
@@ -45,7 +45,7 @@ void analyzePico(const Char_t *inputFile="test.list", char *outputFile="test",st
 	//cout<<"test 3 "<<endl;
 	cout << " Total entries = " << total << endl;
 	if(nEvents>total) nEvents = total;
-	//cout<<"test 4 "<<endl;
+	cout<<"test 4 "<<endl;
 	for (Int_t i=0; i<nEvents; i++){
 
         if(i != 0 && i%50 == 0)

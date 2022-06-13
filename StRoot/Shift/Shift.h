@@ -1,5 +1,5 @@
-#ifndef EventPlane_h
-#define EventPlane_h
+#ifndef Shift_h
+#define Shift_h
 
 #include "StMaker.h"
 #include "StRoot/StEpdUtil/StEpdGeom.h"
@@ -57,13 +57,32 @@ class Shift : public StMaker {
 
 	// get the recenterpar
         TProfile2D *getep_sub_recen[2][_numSubEvents];
-        //  get shift par
+        TProfile2D *getep_full_recen[2];
+
+        TProfile2D *getep_sub_wt_recen[2][_numSubEvents];
+        TProfile2D *getep_full_wt_recen[2];
+
+        TProfile2D *getep_sub_tpc_recen[2][_numSubEvents];
+        TProfile2D *getep_full_tpc_recen[2];
+        
+	//  get shift par
         TProfile3D *p_sub_ep_shiftpar_sin[_numSubEvents];
         TProfile3D *p_sub_ep_shiftpar_cos[_numSubEvents];
+        TProfile3D *p_full_ep_shiftpar_sin;
+        TProfile3D *p_full_ep_shiftpar_cos;
+        
+        TProfile3D *p_sub_ep_wt_shiftpar_sin[_numSubEvents];
+        TProfile3D *p_sub_ep_wt_shiftpar_cos[_numSubEvents];
+        TProfile3D *p_full_ep_wt_shiftpar_sin;
+        TProfile3D *p_full_ep_wt_shiftpar_cos;
 
-        TString mOutPut_Shift;
+        TProfile3D *p_sub_ep_tpc_shiftpar_sin[_numSubEvents];
+        TProfile3D *p_sub_ep_tpc_shiftpar_cos[_numSubEvents];
+        TProfile3D *p_full_ep_tpc_shiftpar_sin;
+        TProfile3D *p_full_ep_tpc_shiftpar_cos;
+	TString mOutPut_Rec;
 
-        TFile *mFile_Shift;
+        TFile *mFile_Rec;
 
 
         ClassDef(Shift, 1)

@@ -77,8 +77,8 @@ void HistManager::InitQAPID()
 
   h2_tofmult_vs_refmult = new TH2D("h2_tofmult_vs_refmult","TofMult vs. RefMult;RefMult;TofMult",1001,-0.5,1000.5,1001,-0.5,1000.5);
 
-  h_nhits       = new TH1D("h_nhits", "nHits;Number of hits;Tracks", 50, 0, 50);
-  h_nhits_dEdx  = new TH1D("h_nhits_dEdx","nHitsdEdx;Number of hits;Tracks", 50, 0, 50);
+  h_nhits       = new TH1D("h_nhits", "nHits;Number of hits;Tracks", 100, 0, 100);
+  h_nhits_dEdx  = new TH1D("h_nhits_dEdx","nHitsdEdx;Number of hits;Tracks", 100, 0, 100);
   h_nhits_ratio = new TH1D("h_nhits_ratio","nhitsFit/nhitsPoss;nhitsFit/nhitsPoss;Tracks",200,0.0,2.0);
   h_DCA         = new TH1D("h_DCA","DCA (cm);DCA (cm);Tracks",100,0.0,10.0);
   
@@ -89,8 +89,8 @@ void HistManager::InitQAPID()
   h2_dEdx_vs_qp_half = new TH2D("h2_dEdx_vs_qp_half", "dE/dx vs q|p|;q|p| (GeV);dE/dx (keV/cm)", 400, 0, 4, 500, 0, 12);
   h2_beta_vs_qp = new TH2D("h2_beta_vs_qp","1/#beta vs Momentum;q*|p| (GeV);1/#beta", 300, -3, 3, 300, 0.5, 3.5);
   h2_m2_vs_qp = new TH2D("h2_m2_vs_qp", "m^2 vs q*|p|;q*|p| (GeV);m^2 (GeV^2)", 400, -4, 4, 400, -0.1, 1.5);
-
-  h_pT_pp = new TH1D("h_pT_pp","#pi^{+} p_{T};p_{T} (GeV/c);Tracks",1000,0.0,5.0);
+  // PID plots
+  /*h_pT_pp = new TH1D("h_pT_pp","#pi^{+} p_{T};p_{T} (GeV/c);Tracks",1000,0.0,5.0);
   h_pT_pm = new TH1D("h_pT_pm","#pi^{-} p_{T}; p_{T} (GeV/c);Tracks",1000,0.0,5.0);
   h_pT_kp = new TH1D("h_pT_kp","K^{+} p_{T}; p_{T} (GeV/c);Tracks",1000,0.0,5.0);
   h_pT_km = new TH1D("h_pT_km","K^{-} p_{T}; p_{T} (GeV/c);Tracks",1000,0.0,5.0);
@@ -159,7 +159,7 @@ void HistManager::InitQAPID()
   h2_pT_vs_yCM_km = new TH2D("h2_pT_vs_yCM_km", "K^{-};y-y_{mid};p_{T} (GeV/c)",   300, -1.2, 1.2, 300, 0, 3.0);
   h2_pT_vs_yCM_pr = new TH2D("h2_pT_vs_yCM_pr", "Proton;y-y_{mid};p_{T} (GeV/c)",  300, -1.2, 1.2, 300, 0, 3.0);
   //h2_pT_vs_yCM_de = new TH2D("h2_pT_vs_yCM_de", "Deuteron;y-y_{mid};p_{T} (GeV/c)",  300, -1.2, 1.2, 300, 0, 3.0);
-  //h2_pT_vs_yCM_tr = new TH2D("h2_pT_vs_yCM_tr", "Triton;y-y_{mid};p_{T} (GeV/c)",  300, -1.2, 1.2, 300, 0, 3.0);
+  //h2_pT_vs_yCM_tr = new TH2D("h2_pT_vs_yCM_tr", "Triton;y-y_{mid};p_{T} (GeV/c)",  300, -1.2, 1.2, 300, 0, 3.0);*/
 
 }
 
@@ -253,7 +253,7 @@ void HistManager::FillTrackCut(Int_t CutID)
 }
 //----------------------------------------------------------------------------
 //PID
-void HistManager::FillProton(StPicoDst *pico, StPicoTrack *track, Double_t y_mid)
+/*void HistManager::FillProton(StPicoDst *pico, StPicoTrack *track, Double_t y_mid)
 {
   Double_t d_pT = track->pPt();
   Double_t d_px = track->pMom().X();
@@ -382,6 +382,7 @@ void HistManager::FillPion(StPicoDst *pico, StPicoTrack *track, Double_t y_mid)
     h2_m2_vs_qp_pm->Fill(s_charge*d_mom, d_m2);
   }
 }
+
 void HistManager::FillPIDMult(Int_t N_pp, Int_t N_pm, Int_t N_kp, Int_t N_km, Int_t N_pr) 
 {
   h_mult_pp->Fill(N_pp);
@@ -390,6 +391,7 @@ void HistManager::FillPIDMult(Int_t N_pp, Int_t N_pm, Int_t N_kp, Int_t N_km, In
   h_mult_km->Fill(N_km);
   h_mult_pr->Fill(N_pr);
 }
+*/
 //----------------------------------------------------------------------------
 
 void HistManager::WriteQAPID()
@@ -420,7 +422,7 @@ void HistManager::WriteQAPID()
     h2_beta_vs_qp->Write();                                               
     h2_m2_vs_qp->Write();
 
-    h_mult_pp->Write();
+    /*h_mult_pp->Write();
     h_mult_pm->Write();
     h_mult_kp->Write();
     h_mult_km->Write();
@@ -468,7 +470,7 @@ void HistManager::WriteQAPID()
     h2_pT_vs_yCM_pm->Write();
     h2_dEdx_vs_qp_pm->Write();
     h2_beta_vs_qp_pm->Write();
-    h2_m2_vs_qp_pm->Write();
+    h2_m2_vs_qp_pm->Write();*/
 }
 
 //----------------------------------------------------------------------------
