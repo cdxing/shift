@@ -1,0 +1,3 @@
+[submodule "StRoot/HistManager"]
+	path = StRoot/HistManager
+	url = ../HistManager
