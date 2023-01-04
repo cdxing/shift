@@ -1,3 +1,6 @@
 [submodule "StRoot/HistManager"]
 	path = StRoot/HistManager
 	url = ../HistManager
+[submodule "StRoot/EpProManager"]
+	path = StRoot/EpProManager
+	url = git@github.com:cdxing/EpProManager.git
