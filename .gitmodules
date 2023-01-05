@@ -4,3 +4,6 @@
 [submodule "StRoot/EpProManager"]
 	path = StRoot/EpProManager
 	url = git@github.com:cdxing/EpProManager.git
+[submodule "StRoot/ConstManager"]
+	path = StRoot/ConstManager
+	url = git@github.com:cdxing/ConstManager.git
