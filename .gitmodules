@@ -13,3 +13,6 @@
 [submodule "StRoot/Run"]
 	path = StRoot/Run
 	url = git@github.com:cdxing/Run.git
+[submodule "StRoot/ConfigReader"]
+	path = StRoot/ConfigReader
+	url = git@github.com:cdxing/ConfigReader.git
